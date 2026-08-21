@@ -174,3 +174,23 @@ No socket event occurs during HTTP file upload. Socket event `message:send` is f
 
 ### 5. Frontend Update
 Frontend displays inline upload loader preview bar. Upon 200 OK HTTP response, the image preview attaches to message input composer. User clicks send, triggering Workflow 4.
+
+---
+
+## Workflow 9: System Health & Infrastructure Boot Flow
+
+### 1. Trigger
+Administrator or automated monitoring health check pings `GET /api/v1/health` or client launches application.
+
+### 2. Backend Process
+Express server intercepts HTTP request, verifies server readiness, inspects database connection state (`mongoose.connection.readyState`), and generates JSON metadata payload.
+
+### 3. Database Operation
+Backend verifies Mongoose connection object status (`readyState === 1`).
+
+### 4. Socket Event
+No socket event involved in HTTP health ping.
+
+### 5. Frontend Update
+Client checks health response `{ success: true, data: { status: "UP" } }` and displays active infrastructure status badge.
+

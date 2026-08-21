@@ -135,3 +135,23 @@ This document records key technical architectural decisions made for NexusChat, 
 - **Trade-offs**:
   - **Pros**: Precise event targeting without broadcasting to all connected sockets.
   - **Cons**: Requires strict room join/leave lifecycle management on client navigation.
+
+### Decision 23: Next.js 15 App Router & Express.js Hybrid Separation
+- **Reason**: Keeping the Next.js 15 frontend in `client/` and the Express + Socket.IO server in `server/` guarantees complete decoupled client-server scalability, allowing independent server deployment to WebSocket-tuned infrastructure.
+- **Trade-offs**:
+  - **Pros**: Independent scaling, clean separation of concern, no Node serverless socket connection timeouts.
+  - **Cons**: Requires handling cross-origin HTTP credentials (CORS with credentials).
+
+---
+
+## Phase Implementation & Architectural Interview Notes
+
+### Phase 1 Interview Notes: Core Infrastructure Setup
+
+- **Question**: Why separate `client/` and `server/` into two distinct Node applications instead of using Next.js API Routes?
+  - **Architect Rationale**: Next.js API routes run on serverless/edge environments where persistent WebSocket (Socket.IO) stateful connections are unreliable or expensive to maintain. A standalone Express.js server provides long-lived HTTP and WebSocket connections with total control over Mongoose connection pools and event handling.
+- **Question**: How does the Express backend handle configuration parsing across environments?
+  - **Architect Rationale**: `server/src/config/env.js` centralizes environment variable loading via `dotenv`, providing fallback defaults for local development (`PORT=5000`, `MONGODB_URI=mongodb://127.0.0.1:27017/nexuschat`) while guaranteeing type safety across services.
+- **Question**: What error handling strategy is enforced across backend routes?
+  - **Architect Rationale**: Operational errors inherit from a custom `ApiError` class with predefined status codes and error codes (`BAD_REQUEST`, `UNAUTHORIZED`, `NOT_FOUND`). Unhandled runtime exceptions are safely caught by `error.middleware.js` and logged as structured JSON via Winston without exposing sensitive internal stack traces to the client.
+

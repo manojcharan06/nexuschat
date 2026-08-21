@@ -83,30 +83,17 @@ NexusChat solves these challenges through clean separation of concerns, stateles
 
 ---
 
-## 6. Development Phases
+## 6. Implementation Progress Tracking
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          NEXUSCHAT DEVELOPMENT PHASES                            │
-└─────────────────────────────────────────────────────────────────────────────────┘
-  Phase 1: Architecture & Design Documentation (CURRENT)
-  ├── System specs, database schema, API contracts, ADRs, socket event definitions.
-  
-  Phase 2: Backend Core & Authentication Engine
-  ├── Express server setup, MongoDB schemas, JWT auth engine, DTO validation middleware.
-  
-  Phase 3: Real-Time Socket.IO Server Setup
-  ├── Socket handshake auth, connection manager, room join logic, event dispatchers.
-  
-  Phase 4: Frontend Base Setup & Design System
-  ├── Vite React client, Zustand state stores, Tailwind/CSS variables, HTTP client interceptors.
-  
-  Phase 5: Messaging & Real-Time Sync Integration
-  ├── Chat UI components, message history pagination, socket hooks, optimistic message updates.
-  
-  Phase 6: Presence, Typing Indicators & Media Storage
-  ├── Online status pipeline, typing debounce engine, image upload service integration.
-  
-  Phase 7: Testing, Optimization & Deployment Readiness
-  ├── Integration tests, index optimization, load test socket scaling, security audit.
-```
+| Phase | Phase Name | Status | Key Deliverables |
+|---|---|---|---|
+| **Phase 1** | Next.js 15 & Express Base Setup | ✅ **COMPLETED** | Next.js 15 App Router (`client/`), Express server (`server/`), MongoDB Mongoose connection (`db.js`), env configuration (`.env`), base folder trees. |
+| **Phase 2** | Authentication (JWT, Auth Guard) | ⏳ *PENDING* | Signup, Login, Password Hashing, JWT Access Token & HttpOnly Refresh Cookie. |
+| **Phase 3** | User Profile & Avatar Upload | ⏳ *PENDING* | Profile updates, Cloudinary avatar upload, bio status. |
+| **Phase 4** | Socket.IO Connection & Presence | ⏳ *PENDING* | Handshake auth, `user:online`, `lastSeen` tracking. |
+| **Phase 5** | One-to-One Real-Time Messaging | ⏳ *PENDING* | Direct chat threads, message insertion, socket delivery. |
+| **Phase 6** | Typing Indicator & Read Status | ⏳ *PENDING* | Debounced typing, `delivered` and `seen` checkmarks. |
+| **Phase 7** | Image Sharing | ⏳ *PENDING* | Media upload pipeline, inline thumbnail renderer. |
+| **Phase 8** | Search Users & Messages | ⏳ *PENDING* | User discovery, message text search. |
+| **Phase 9** | UI Polish & Animations | ⏳ *PENDING* | Framer Motion transitions, responsive drawer, loading skeletons. |
+
