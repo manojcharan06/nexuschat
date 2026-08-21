@@ -4,6 +4,13 @@ NexusChat is an enterprise-grade, production-quality real-time messaging platfor
 
 ---
 
+## 🌐 Live Demo
+
+- **Frontend Application**: `[Deployment URL will be added after deployment]`
+- **Backend API & Socket Health Check**: `[Deployment URL will be added after deployment]/health`
+
+---
+
 ## 🚀 Key Features
 
 - 🔐 **Enterprise Authentication**: Dual-token JWT architecture (Short-lived Access Token in memory + 7-day HttpOnly Refresh Cookie) with automatic silent refresh.
@@ -121,6 +128,17 @@ npm run dev
 
 ---
 
+## ☁️ Production Deployment
+
+NexusChat is configured for zero-friction deployment across modern cloud providers:
+- **Frontend**: Deploy `client/` directory to **Vercel** or **Netlify**.
+- **Backend & Socket.IO**: Deploy `server/` directory to **Render**, **Railway**, or **Fly.io**.
+- **Database**: Host database on **MongoDB Atlas**.
+
+Detailed step-by-step cloud deployment guidelines are available in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
 ## 🧪 Testing
 
 Comprehensive test cases, manual QA steps, and production build instructions are documented in [`docs/TESTING.md`](docs/TESTING.md).
@@ -141,6 +159,6 @@ npm run build
 
 ## 🗺️ Future Roadmap
 
-- 📷 **Phase 7+ Media Pipeline**: Image attachment uploads with inline thumbnail previews.
+- 📷 **Phase 9 Media Pipeline**: Image attachment uploads with inline thumbnail previews.
 - 👥 **Group Conversations**: Multi-user group chats, group admin controls, and member management.
 - ✔️✔️ **Read Receipts**: Typing indicators and message delivery/read status checkmarks.

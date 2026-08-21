@@ -1,0 +1,17 @@
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/DECISIONS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/FLOW.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/INTERVIEW_NOTES.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/PROJECT_PLAN.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/src/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/src/controllers/auth.controller.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/src/server.js', LF will be replaced by CRLF the next time Git touches it
+ README.md                                 | 20 [32m+++++++++++++[m[31m-[m
+ docs/DECISIONS.md                         |  7 [32m+++++[m
+ docs/FLOW.md                              | 17 [32m++++++++++++[m
+ docs/INTERVIEW_NOTES.md                   | 14 [32m++++++++++[m
+ docs/PROJECT_PLAN.md                      |  3 [32m++[m[31m-[m
+ server/src/app.js                         | 44 [32m++++++++++++++++++[m[31m-------------[m
+ server/src/controllers/auth.controller.js |  3 [32m++[m[31m-[m
+ server/src/server.js                      |  9 [32m++++[m[31m---[m
+ 8 files changed, 93 insertions(+), 24 deletions(-)

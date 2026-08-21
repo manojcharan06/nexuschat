@@ -273,6 +273,23 @@ User A selects User B from contact search or conversation list and types a messa
 2. API Projections: Mongoose queries explicitly exclude `password` field (`select('-password')`).
 3. Silent Refresh Interceptor: Axios interceptor traps HTTP 401, verifies `!originalRequest._retry`, calls `/auth/refresh`. If refresh fails, session is cleared without infinite HTTP request loops.
 
+---
+
+## Workflow 14: Production Cloud Deployment & Health Verification Flow
+
+### 1. Cloud PaaS Startup & Health Probe
+1. PaaS host (Render / Railway / Fly.io) pulls `server` repository code and runs `node src/server.js`.
+2. Server binds to `0.0.0.0:${PORT}` and connects to MongoDB Atlas URI (`mongodb+srv://...`).
+3. Load balancer issues automated HTTP GET probe to `https://nexuschat.onrender.com/health`.
+4. API responds with HTTP 200 `{ status: 'ok', service: 'NexusChat API Server' }`, marking container healthy.
+
+### 2. Cross-Domain HTTPS Client & Socket Connection
+1. User accesses `https://nexuschat.vercel.app`.
+2. Frontend issues REST requests to `NEXT_PUBLIC_API_URL` (`https://nexuschat.onrender.com/api/v1`).
+3. Server returns Access Token in body and `refreshToken` cookie set to `SameSite=None; Secure; HttpOnly`.
+4. Client Socket.IO establishes secure WebSocket connection over WSS (`wss://nexuschat.onrender.com/socket.io/?EIO=4&transport=websocket`).
+
+
 
 
 

@@ -107,6 +107,20 @@ This document collects architectural rationale, technical trade-off analyses, an
 ### Q3: How was production build reliability verified for Next.js 15?
 - **Architect Answer**: Executed `npm run build` in `client/`, verifying Next.js 15 Turbopack compilation. The production build output generated static HTML/JSX pages for `/`, `/_not-found`, `/chat`, `/login`, and `/register` with 0 TypeScript/JSX errors and 0 missing dependency warnings.
 
+---
+
+## Phase 8: Deployment Preparation & Production Configuration
+
+### Q1: Why are HttpOnly cookies configured with `SameSite=None` and `Secure` in production?
+- **Architect Answer**: In a decoupled production architecture where the frontend (e.g., Vercel at `nexuschat.vercel.app`) and backend (e.g., Render at `nexuschat.onrender.com`) reside on different top-level domains over HTTPS, browser cross-site cookie policies reject `SameSite=Lax` cookies sent via cross-origin `fetch`/`axios` calls. Setting `sameSite: 'none'` and `secure: true` allows modern browsers to safely transmit the HttpOnly refresh token cookie across secure cross-site HTTPS requests.
+
+### Q2: Why is the backend server bound to `0.0.0.0` instead of `127.0.0.1`?
+- **Architect Answer**: Containerized PaaS platforms (such as Render, Railway, Fly.io, Heroku, and Docker containers) run inside virtualized network namespaces. Binding Express to `127.0.0.1` limits listener traffic to local loopback inside the container, preventing external ingress proxies from routing user requests to the server. Binding to `0.0.0.0` accepts external ingress connections across all container network interfaces.
+
+### Q3: How do health check endpoints improve production availability?
+- **Architect Answer**: PaaS hosting providers and cloud load balancers periodically probe application health check endpoints (`GET /health` and `GET /api/v1/health`). If a container instance hangs or fails, the load balancer receives a non-200 status code or timeout and automatically restarts the instance or redirects traffic to healthy worker instances, ensuring high availability.
+
+
 
 
 

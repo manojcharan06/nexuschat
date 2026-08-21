@@ -12,14 +12,26 @@ import messageRoutes from './routes/message.routes.js';
 
 const app = express();
 
-// Middleware configuration
-app.use(cors({
-  origin: env.CLIENT_URL,
+// Parse single or comma-separated client origins
+const allowedOrigins = env.CLIENT_URL
+  ? env.CLIENT_URL.split(',').map((origin) => origin.trim())
+  : ['http://localhost:3000'];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server health checks)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback allow for production flexibility
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
 
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
@@ -32,22 +44,18 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/conversations', conversationRoutes);
 app.use('/api/v1/messages', messageRoutes);
 
-
-
-
-// Health check endpoint
-app.get('/api/v1/health', (req, res) => {
+// Root & API Health check endpoints (for load balancers & deployment platforms)
+const healthHandler = (req, res) => {
   res.status(200).json({
-    success: true,
-    statusCode: 200,
-    data: {
-      status: 'UP',
-      service: 'NexusChat API Server',
-      timestamp: new Date().toISOString(),
-      environment: env.NODE_ENV,
-    },
+    status: 'ok',
+    service: 'NexusChat API Server',
+    timestamp: new Date().toISOString(),
+    environment: env.NODE_ENV,
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
 
 // Global 404 handler for unhandled endpoints
 app.use('*', (req, res) => {

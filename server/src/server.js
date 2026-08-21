@@ -14,9 +14,12 @@ const startServer = async () => {
   // Connect to database
   await connectDB();
 
-  server.listen(env.PORT, () => {
-    logger.info(`🚀 NexusChat Server listening on port ${env.PORT} in ${env.NODE_ENV} mode`);
-    logger.info(`🔗 Health check available at http://localhost:${env.PORT}/api/v1/health`);
+  const PORT = env.PORT || 5000;
+  const HOST = '0.0.0.0';
+
+  server.listen(PORT, HOST, () => {
+    logger.info(`🚀 NexusChat Server listening on ${HOST}:${PORT} in ${env.NODE_ENV} mode`);
+    logger.info(`🔗 Health check available at http://localhost:${PORT}/health`);
   });
 };
 
