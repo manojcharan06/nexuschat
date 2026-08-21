@@ -4,12 +4,14 @@ import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useSocketStore } from '../store/useSocketStore.js';
+import { useChatStore } from '../store/useChatStore.js';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
 export function useSocket() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const activeConversationId = useChatStore((state) => state.activeConversationId);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -48,6 +50,13 @@ export function useSocket() {
         useSocketStore.getState().setPresence(userId, { username, isOnline, lastSeen });
       });
 
+      // Handle real-time incoming messages
+      socketInstance.on('message:received', (message) => {
+        if (message && message.conversationId) {
+          useChatStore.getState().appendIncomingMessage(message.conversationId, message);
+        }
+      });
+
       socketInstance.on('disconnect', () => {
         useSocketStore.getState().setIsConnected(false);
       });
@@ -60,11 +69,17 @@ export function useSocket() {
     }
 
     return () => {
-      // In React 18 / Next.js, do not abruptly abort in-flight WebSocket connections on double-mount.
-      // Disconnect cleanly only when user logs out or session is unauthenticated.
       if (!useAuthStore.getState().isAuthenticated) {
         useSocketStore.getState().clearSocket();
       }
     };
   }, [accessToken, isAuthenticated]);
+
+  // Handle active conversation room join
+  useEffect(() => {
+    const socketInstance = useSocketStore.getState().socket;
+    if (socketInstance && socketInstance.connected && activeConversationId) {
+      socketInstance.emit('conversation:join', { conversationId: activeConversationId });
+    }
+  }, [activeConversationId]);
 }

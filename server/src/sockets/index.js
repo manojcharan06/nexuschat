@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from '../utils/logger.util.js';
 import { socketAuthMiddleware } from './socket.auth.js';
 import { registerPresenceHandlers } from './presence.handler.js';
+import { registerChatHandlers } from './chat.handler.js';
 
 let io = null;
 
@@ -23,9 +24,11 @@ export const initSocket = (httpServer) => {
   io.on('connection', (socket) => {
     logger.info(`⚡ Socket Connected: ${socket.id} (userId: ${socket.userId})`);
 
-    // Register Presence Handlers
+    // Register Handlers
     registerPresenceHandlers(io, socket);
+    registerChatHandlers(io, socket);
   });
+
 
   logger.info('🔌 Socket.IO Server initialized cleanly');
 

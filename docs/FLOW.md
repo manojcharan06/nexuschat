@@ -217,4 +217,32 @@ No socket event involved in HTTP profile editing (Presence updates handle online
 1. Upon receiving updated user document from server, `useAuthStore` updates `user` state.
 2. Top header navigation pill, active profile avatar, and status bio render new values instantly.
 
+---
+
+## Workflow 11: One-to-One Real-Time Messaging & Persistence Flow
+
+### 1. Trigger
+User A selects User B from contact search or conversation list and types a message *"Hello from User A"* in `ChatInputComposer`.
+
+### 2. Frontend Optimistic Process
+1. Client generates a temporary UUID `tempId` (e.g. `temp_17200000_abc`).
+2. Client renders optimistic message bubble immediately in `MessageList` with status `sending`.
+
+### 3. Socket & Backend Process
+1. Client emits socket event `message:send` with payload `{ conversationId, text, tempId }`.
+2. Backend socket listener verifies user membership in `conversationId`.
+3. Backend saves new document into MongoDB `messages` collection: `{ conversationId, senderId, text, status: "sent", tempId }`.
+4. Backend updates `conversations` document setting `lastMessage: message._id` and `updatedAt: new Date()`.
+5. Backend invokes acknowledgement callback returning `{ status: "success", data: savedMessage }` to sender.
+6. Backend emits `message:received` to socket room `conv_<conversationId>` and personal user rooms `user_<recipientId>`.
+
+### 4. Database Operation
+`Message.create()` inserts document into MongoDB `messages` collection. `Conversation.findByIdAndUpdate()` updates thread summary metadata.
+
+### 5. Frontend Real-Time Sync & Duplicate Prevention
+1. Sender socket receives acknowledgement callback, matches `tempId`, and replaces optimistic bubble with confirmed `_id` and status `sent`.
+2. Recipient socket receives `message:received` event. Client checks if message `_id` or `tempId` already exists in Zustand store. If not present, appends bubble to log and updates sidebar preview text.
+3. Upon page refresh, `getMessagesApi(conversationId)` fetches history directly from MongoDB sorted by `createdAt: -1`.
+
+
 

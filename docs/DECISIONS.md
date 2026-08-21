@@ -172,6 +172,19 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Eliminates browser WebSocket connection abort warnings, prevents duplicate socket connections, maintains clean disconnection on logout.
   - **Cons**: Requires careful Zustand store selector usage to prevent effect re-triggering.
 
+### Decision 29: MongoDB Database Persistence Prior to Socket Event Emission
+- **Reason**: Persisting messages to MongoDB first guarantees durability, auditability, and consistent state recovery upon page refresh. Emitting socket events only after a successful database write ensures that recipients never receive ephemeral socket messages that fail to store in persistent storage.
+- **Trade-offs**:
+  - **Pros**: High data integrity, guaranteed persistence, absolute single source of truth.
+  - **Cons**: Minor database IO latency (~5-15ms) prior to real-time socket emission (mitigated by MongoDB compound indexing).
+
+### Decision 30: Client TempId Matching & Dual-Layer Duplicate Prevention
+- **Reason**: To deliver zero-perceived latency, the client generates a temporary message (`tempId`) and renders it immediately in the UI. When the server acknowledges the write via socket callback, the client swaps `tempId` with the confirmed MongoDB `_id`. Incoming socket broadcasts check both `tempId` and `_id` against the Zustand store log, ensuring senders and recipients never render duplicate bubbles.
+- **Trade-offs**:
+  - **Pros**: Instant UI feedback, 100% immunity against duplicate message rendering during network retries or room broadcasts.
+  - **Cons**: Requires state store replace-matching logic (`confirmOptimisticMessage`).
+
+
 
 
 

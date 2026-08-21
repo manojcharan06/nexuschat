@@ -52,3 +52,36 @@ export const uploadAvatar = async (req, res, next) => {
     next(error);
   }
 };
+
+export const searchUsers = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const currentUserId = req.user._id;
+
+    if (!q || typeof q !== 'string' || q.trim() === '') {
+      return res.status(200).json({
+        success: true,
+        statusCode: 200,
+        data: [],
+      });
+    }
+
+    const searchRegex = new RegExp(q.trim(), 'i');
+
+    const users = await User.find({
+      _id: { $ne: currentUserId },
+      $or: [{ username: searchRegex }, { email: searchRegex }],
+    })
+      .select('username email avatarUrl isOnline lastSeen statusMessage')
+      .limit(20);
+
+    res.status(200).json({
+      success: true,
+      statusCode: 200,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

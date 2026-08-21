@@ -65,5 +65,22 @@ This document collects architectural rationale, technical trade-off analyses, an
   3. Modified the `useEffect` cleanup function to check `if (!useAuthStore.getState().isAuthenticated)`. During React 18 double-mounts, the cleanup function no longer closes in-flight connecting WebSockets if the user remains authenticated.
 - **Socket Lifecycle & Safety**: When a user logs out (`isAuthenticated == false`), the effect detects session termination and executes `clearSocket()`, closing the socket cleanly. During navigation or component re-renders, the single active socket remains connected safely without duplicate connections or aborted handshakes.
 
+---
+
+## Phase 5: One-to-One Real-Time Messaging & Persistence Engine
+
+### Q1: Why use REST API for initial message history loading and Socket.IO for real-time delivery?
+- **Architect Answer**: REST APIs excel at stateless batch operations like querying cursor-paginated message logs (`GET /api/v1/messages/:conversationId?limit=30&before=id`), providing browser HTTP caching, simple pagination parameters, and explicit error codes. Socket.IO excels at low-latency bidirectional push events (`message:send` / `message:received`). Using REST for initial log hydration and Socket.IO for live event streams provides optimal performance, reliability, and clean separation of concerns.
+
+### Q2: How does database persistence interact with Socket.IO event emissions?
+- **Architect Answer**: When `message:send` arrives at the server, the socket handler invokes `messageService.createMessage()`, which inserts the message into MongoDB and updates the conversation's `lastMessage` reference *before* emitting any socket events. Once the database write succeeds, the server returns a success acknowledgement callback to the sender socket and broadcasts `message:received` to the conversation room `conv_<conversationId>`. This guarantees durability—socket events are never emitted for ephemeral messages that fail to store in persistent database storage.
+
+### Q3: How are duplicate messages prevented on the frontend?
+- **Architect Answer**: Senders use client-generated temporary IDs (`tempId`). When a user submits a message, the client immediately renders an optimistic bubble with `tempId`. When the server acknowledges the write, the client matches `tempId` and replaces it with the confirmed database `_id`. Furthermore, the `appendIncomingMessage` reducer in `useChatStore` checks both `tempId` and MongoDB `_id` against existing messages in the array before appending, ensuring duplicate socket broadcasts or network retries never result in duplicate UI rendering.
+
+### Q4: How is conversation authorization enforced across REST and Socket.IO layers?
+- **Architect Answer**: In the REST layer, `getConversationMessages` and `sendMessageHttp` inspect `Conversation.findById(id)` and verify `conversation.participants.includes(userId)`. If unauthorized, an operational `403 Forbidden` error (`UNAUTHORIZED_CONVERSATION`) is thrown. In the Socket.IO layer, `conversation:join` and `message:send` verify user membership in the target conversation room before joining sockets or saving messages, preventing unauthorized users from spying on private threads.
+
+
 
 

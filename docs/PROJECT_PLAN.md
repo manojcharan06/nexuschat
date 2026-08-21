@@ -91,7 +91,7 @@ NexusChat solves these challenges through clean separation of concerns, stateles
 | **Phase 2** | Authentication (JWT, Auth Guard) | ✅ **COMPLETED** | Signup, Login, Password Hashing (`bcrypt`), JWT Access Token & HttpOnly Refresh Cookie, Protected `/chat` route guard. |
 | **Phase 3** | User Profile & Avatar Upload | ✅ **COMPLETED** | Profile updates (`PATCH /users/profile`), Avatar upload (`POST /upload/image`), `UserProfileModal`, status message updates. |
 | **Phase 4** | Socket.IO Connection & Presence | ✅ **COMPLETED** | Socket handshake auth (`socket.auth.js`), `user:online`, `lastSeen` tracking, `useSocket` client hook, `PresenceBadge`. |
-| **Phase 5** | One-to-One Real-Time Messaging | ⏳ *PENDING* | Direct chat threads, message insertion, socket delivery. |
+| **Phase 5** | One-to-One Real-Time Messaging | ✅ **COMPLETED** | `Conversation` & `Message` models, REST APIs (`/conversations/direct`, `/messages/:conversationId`), Socket `message:send` & `message:received`, Optimistic rendering, Duplicate prevention. |
 | **Phase 6** | Typing Indicator & Read Status | ⏳ *PENDING* | Debounced typing, `delivered` and `seen` checkmarks. |
 | **Phase 7** | Image Sharing | ⏳ *PENDING* | Media upload pipeline, inline thumbnail renderer. |
 | **Phase 8** | Search Users & Messages | ⏳ *PENDING* | User discovery, message text search. |
