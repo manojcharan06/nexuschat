@@ -142,6 +142,19 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Independent scaling, clean separation of concern, no Node serverless socket connection timeouts.
   - **Cons**: Requires handling cross-origin HTTP credentials (CORS with credentials).
 
+### Decision 24: Express-Validator DTO Middleware for Input Sanitization
+- **Reason**: Validates input structure (email pattern, password strength, username alphanumeric checks) before requests reach controller business logic.
+- **Trade-offs**:
+  - **Pros**: Prevents invalid data types or malformed payloads from touching the database layer.
+  - **Cons**: Adds small validation execution overhead per request.
+
+### Decision 25: Client Axios 401 Refresh Interceptor with Queueing
+- **Reason**: When an Access Token expires, Axios intercepts the 401 error, transparently calls `/api/v1/auth/refresh`, updates the Zustand auth state, and retries the original request without disrupting the user.
+- **Trade-offs**:
+  - **Pros**: Seamless user experience without forcing user re-logins every 15 minutes.
+  - **Cons**: Requires retry guard logic (`originalRequest._retry`) to prevent infinite loop loops if the refresh cookie is invalid.
+
+
 ---
 
 ## Phase Implementation & Architectural Interview Notes
