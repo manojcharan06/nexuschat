@@ -3,10 +3,12 @@
 import { useState, useRef } from 'react';
 import { useAuthStore } from '../../store/useAuthStore.js';
 import { updateProfileApi, uploadAvatarApi } from '../../api/user.api.js';
+import { useToast } from '../common/ToastContext.jsx';
 import { X, Camera, Loader2, Check, AlertCircle } from 'lucide-react';
 
 export default function UserProfileModal({ isOpen, onClose }) {
   const { user, setAuth, accessToken } = useAuthStore();
+  const toast = useToast();
   const fileInputRef = useRef(null);
 
   const [statusMessage, setStatusMessage] = useState(user?.statusMessage || '');
@@ -14,7 +16,6 @@ export default function UserProfileModal({ isOpen, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
 
   if (!isOpen) return null;
 
@@ -27,7 +28,9 @@ export default function UserProfileModal({ isOpen, onClose }) {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image file size must be less than 5MB');
+      const errMsg = 'Image file size must be less than 5MB';
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
@@ -42,8 +45,11 @@ export default function UserProfileModal({ isOpen, onClose }) {
       const updatedUser = res.data.user;
       setAvatarPreview(updatedUser.avatarUrl);
       setAuth(updatedUser, accessToken);
+      toast.success('Avatar updated successfully!');
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to upload avatar image');
+      const errMsg = err.response?.data?.error?.message || 'Failed to upload avatar image';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setUploading(false);
     }
@@ -53,19 +59,17 @@ export default function UserProfileModal({ isOpen, onClose }) {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccess(false);
 
     try {
       const res = await updateProfileApi({ statusMessage });
       const updatedUser = res.data;
       setAuth(updatedUser, accessToken);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 1000);
+      toast.success('Profile saved successfully!');
+      onClose();
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to update profile');
+      const errMsg = err.response?.data?.error?.message || 'Failed to update profile';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setSaving(false);
     }
@@ -77,7 +81,8 @@ export default function UserProfileModal({ isOpen, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all"
+          aria-label="Close edit profile modal"
+          className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <X className="w-5 h-5" />
         </button>
@@ -95,13 +100,6 @@ export default function UserProfileModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {success && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0" />
-            <span>Profile saved successfully!</span>
-          </div>
-        )}
-
         {/* Avatar Upload Container */}
         <div className="flex flex-col items-center justify-center space-y-3">
           <div
@@ -110,7 +108,7 @@ export default function UserProfileModal({ isOpen, onClose }) {
           >
             <img
               src={avatarPreview || user?.avatarUrl}
-              alt={user?.username}
+              alt={`${user?.username}'s avatar preview`}
               className="w-full h-full object-cover"
             />
 
@@ -160,14 +158,14 @@ export default function UserProfileModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || uploading}
-              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/25 flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/25 flex items-center gap-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               {saving ? (
                 <>

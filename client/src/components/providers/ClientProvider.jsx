@@ -1,7 +1,12 @@
 'use client';
 
 import AuthGuard from '../auth/AuthGuard';
+import { ToastProvider } from '../common/ToastContext';
 
 export default function ClientProvider({ children }) {
-  return <AuthGuard>{children}</AuthGuard>;
+  return (
+    <ToastProvider>
+      <AuthGuard>{children}</AuthGuard>
+    </ToastProvider>
+  );
 }

@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginApi } from '../../../api/auth.api.js';
 import { useAuthStore } from '../../../store/useAuthStore.js';
+import { useToast } from '../../../components/common/ToastContext.jsx';
 import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -33,11 +35,13 @@ export default function LoginPage() {
       const res = await loginApi(formData);
       const { user, accessToken } = res.data;
       setAuth(user, accessToken);
+      toast.success(`Welcome back, @${user.username}!`);
       router.push('/chat');
     } catch (err) {
       const errorMessage =
         err.response?.data?.error?.message || 'Failed to sign in. Please check your credentials.';
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -102,7 +106,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               {loading ? (
                 <>

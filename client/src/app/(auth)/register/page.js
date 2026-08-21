@@ -4,10 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerApi } from '../../../api/auth.api.js';
+import { useToast } from '../../../components/common/ToastContext.jsx';
 import { MessageSquare, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     username: '',
@@ -32,6 +34,7 @@ export default function RegisterPage() {
     try {
       await registerApi(formData);
       setSuccess(true);
+      toast.success('Account created successfully! Redirecting to login...');
       setTimeout(() => {
         router.push('/login');
       }, 1500);
@@ -41,6 +44,7 @@ export default function RegisterPage() {
         err.response?.data?.error?.details?.[0]?.message ||
         'Registration failed. Please try again.';
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -127,7 +131,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               {loading ? (
                 <>

@@ -92,8 +92,9 @@ NexusChat solves these challenges through clean separation of concerns, stateles
 | **Phase 3** | User Profile & Avatar Upload | ✅ **COMPLETED** | Profile updates (`PATCH /users/profile`), Avatar upload (`POST /upload/image`), `UserProfileModal`, status message updates. |
 | **Phase 4** | Socket.IO Connection & Presence | ✅ **COMPLETED** | Socket handshake auth (`socket.auth.js`), `user:online`, `lastSeen` tracking, `useSocket` client hook, `PresenceBadge`. |
 | **Phase 5** | One-to-One Real-Time Messaging | ✅ **COMPLETED** | `Conversation` & `Message` models, REST APIs (`/conversations/direct`, `/messages/:conversationId`), Socket `message:send` & `message:received`, Optimistic rendering, Duplicate prevention. |
-| **Phase 6** | Typing Indicator & Read Status | ⏳ *PENDING* | Debounced typing, `delivered` and `seen` checkmarks. |
-| **Phase 7** | Image Sharing | ⏳ *PENDING* | Media upload pipeline, inline thumbnail renderer. |
+| **Phase 6** | UI/UX Polish & Responsiveness | ✅ **COMPLETED** | Accessible Toast notifications, Mobile slide navigation, Socket connection health pill, Skeleton loaders, ARIA labels, Keyboard UX. |
+| **Phase 7** | Final QA, Bug Fixing & Production Readiness | ✅ **COMPLETED** | Environment templates (`.env.example`), Next.js 15 production build (`npm run build`), `docs/TESTING.md`, system `README.md`, Security audit. |
+| **Phase 8** | Image Sharing | ⏳ *PENDING* | Media upload pipeline, inline thumbnail renderer. |
 | **Phase 8** | Search Users & Messages | ⏳ *PENDING* | User discovery, message text search. |
 | **Phase 9** | UI Polish & Animations | ⏳ *PENDING* | Framer Motion transitions, responsive drawer, loading skeletons. |
 

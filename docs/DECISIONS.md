@@ -184,6 +184,20 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Instant UI feedback, 100% immunity against duplicate message rendering during network retries or room broadcasts.
   - **Cons**: Requires state store replace-matching logic (`confirmOptimisticMessage`).
 
+### Decision 31: Lightweight Toast Context & Mobile Viewport Navigation Architecture
+- **Reason**: Heavy external toast libraries introduce unnecessary bundle overhead. A native React `ToastContext` provider provides accessible, auto-dismissing toast notifications (`role="alert"`) across login, register, profile, and socket events. For mobile UX (`< 768px`), view state toggles between Sidebar (100% width) and Chat View (100% width) with a dedicated header Back button, preventing horizontal layout overflow on small viewports.
+- **Trade-offs**:
+  - **Pros**: Zero third-party bundle bloat, 100% mobile-friendly UX, accessible keyboard focus rings (`focus-visible:ring-indigo-500`).
+  - **Cons**: Requires state-driven view toggles on mobile screens.
+
+### Decision 32: Production Build Optimization & Security Audit Hardening
+- **Reason**: Preparing NexusChat for production deployment requires strict environment isolation (`.env.example` templates omitting secrets), static page pre-rendering via Next.js 15 Turbopack compilation (`npm run build`), password exclusion in all Mongoose User queries (`select: '-password'`), and Axios 401 interceptor loop guards on silent token refresh.
+- **Trade-offs**:
+  - **Pros**: Zero committed secrets, 100% clean production bundle build, hardened API endpoints, complete QA documentation (`docs/TESTING.md` & `README.md`).
+  - **Cons**: Requires manual environment variable setup per target host.
+
+
+
 
 
 

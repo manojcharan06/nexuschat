@@ -53,7 +53,7 @@ export default function ChatPage() {
     <div className="h-screen bg-slate-950 text-slate-100 flex overflow-hidden selection:bg-indigo-500 selection:text-white">
       {/* Sidebar - Visible on Desktop or on Mobile when no active conversation selected */}
       <div
-        className={`w-full md:w-80 lg:w-80 h-full shrink-0 ${
+        className={`w-full md:w-80 lg:w-80 h-full shrink-0 transition-all duration-300 ${
           activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
@@ -61,8 +61,8 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area - Visible on Desktop or on Mobile when active conversation selected */}
-      <div
-        className={`flex-1 flex flex-col h-full min-w-0 bg-slate-950 ${
+      <main
+        className={`flex-1 flex flex-col h-full min-w-0 bg-slate-950 relative transition-all duration-300 ${
           !activeConversationId ? 'hidden md:flex' : 'flex'
         }`}
       >
@@ -102,7 +102,7 @@ export default function ChatPage() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* User Profile Modal */}
       <UserProfileModal

@@ -4,18 +4,25 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/useAuthStore.js';
 import { useChatStore } from '../../store/useChatStore.js';
 import { useSocketStore } from '../../store/useSocketStore.js';
+import { useToast } from '../common/ToastContext.jsx';
 import { Send, Image as ImageIcon } from 'lucide-react';
 
 export default function ChatInputComposer({ conversationId }) {
   const [text, setText] = useState('');
   const currentUser = useAuthStore((state) => state.user);
   const socket = useSocketStore((state) => state.socket);
+  const isConnected = useSocketStore((state) => state.isConnected);
   const { addOptimisticMessage, confirmOptimisticMessage } = useChatStore();
+  const toast = useToast();
 
   const handleSend = (e) => {
     e.preventDefault();
     const trimmedText = text.trim();
     if (!trimmedText || !conversationId) return;
+
+    if (!isConnected) {
+      toast.error('Socket disconnected. Reconnecting to real-time server...');
+    }
 
     // Generate optimistic tempId
     const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -47,12 +54,10 @@ export default function ChatInputComposer({ conversationId }) {
           if (ack && ack.status === 'success' && ack.data) {
             confirmOptimisticMessage(conversationId, tempId, ack.data);
           } else {
-            console.error('Socket message send error:', ack?.message);
+            toast.error(ack?.message || 'Failed to send message');
           }
         }
       );
-    } else {
-      console.warn('Socket disconnected. Unable to send real-time message.');
     }
   };
 
@@ -71,8 +76,10 @@ export default function ChatInputComposer({ conversationId }) {
       <div className="flex items-center gap-2 max-w-4xl mx-auto">
         <button
           type="button"
-          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-all shrink-0"
-          title="Attach Image"
+          aria-label="Attach Image"
+          className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          title="Attach Image (Coming Soon)"
+          onClick={() => toast.info('Image attachments enabled in Phase 7')}
         >
           <ImageIcon className="w-5 h-5" />
         </button>
@@ -84,14 +91,15 @@ export default function ChatInputComposer({ conversationId }) {
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-all touch-manipulation"
           />
         </div>
 
         <button
           type="submit"
+          aria-label="Send Message"
           disabled={!text.trim()}
-          className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <Send className="w-4 h-4" />
         </button>

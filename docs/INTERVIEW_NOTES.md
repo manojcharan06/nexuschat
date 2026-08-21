@@ -81,6 +81,34 @@ This document collects architectural rationale, technical trade-off analyses, an
 ### Q4: How is conversation authorization enforced across REST and Socket.IO layers?
 - **Architect Answer**: In the REST layer, `getConversationMessages` and `sendMessageHttp` inspect `Conversation.findById(id)` and verify `conversation.participants.includes(userId)`. If unauthorized, an operational `403 Forbidden` error (`UNAUTHORIZED_CONVERSATION`) is thrown. In the Socket.IO layer, `conversation:join` and `message:send` verify user membership in the target conversation room before joining sockets or saving messages, preventing unauthorized users from spying on private threads.
 
+---
+
+## Phase 6: UI/UX Polish, Responsiveness & Production Readiness
+
+### Q1: How does the responsive chat layout handle view transitions on mobile devices (< 768px)?
+- **Architect Answer**: On desktop viewports (`>= 768px`), `ChatPage` renders a persistent 2-column workspace (Sidebar fixed 320px + Chat area Flex 1). On mobile viewports (`< 768px`), view state is driven conditionally by `activeConversationId`. When no conversation is active (`activeConversationId == null`), the sidebar occupies 100% of the screen width. Tapping a contact sets `activeConversationId`, smoothly hiding the sidebar and sliding the main chat window to 100% width. Tapping the header `ArrowLeft` back button resets `activeConversationId` to `null`, taking the user back to the sidebar without layout distortion or horizontal overflow.
+
+### Q2: How is Socket.IO connection state communicated to the user without overwhelming the UI?
+- **Architect Answer**: Rather than popping disruptive full-screen alert banners on momentary network drops, `ChatHeader` renders a subtle glowing health pill (`Wifi` / `WifiOff`). When connected, it displays a green status badge; during automatic Socket.IO reconnection attempts, it transitions to a pulsing amber badge (`Reconnecting...`). If a user attempts to send a message while disconnected, `useToast()` emits an actionable notification indicating socket reconnection is in progress.
+
+### Q3: What accessibility and keyboard interaction standards were implemented?
+- **Architect Answer**: All icon-only buttons (Settings, Logout, Back, Send, Attachments) feature explicit `aria-label` tags for screen readers. Form controls utilize semantic `<form>`, `<aside>`, `<header>`, and `<main>` tags. Interactive elements feature visible focus rings (`focus-visible:ring-2 focus-visible:ring-indigo-500`), and text textareas support `Enter` key submission (`Shift+Enter` for new line).
+
+---
+
+## Phase 7: Final QA, Bug Fixing & Production Readiness
+
+### Q1: How does NexusChat ensure zero secret exposure in source control?
+- **Architect Answer**: NexusChat relies on environment variable templates (`.env.example`) in both `server/` and `client/` directories. `.env.example` contains only variable keys (`MONGODB_URI`, `JWT_ACCESS_SECRET`, `CLIENT_URL`) without live values or credentials. Both `.env` and `.env.local` are strictly ignored by `.gitignore`.
+
+### Q2: How does the Axios response interceptor prevent infinite HTTP 401 retry loops?
+- **Architect Answer**: In `client/src/lib/axios.js`, the response interceptor checks `if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh'))`. It flags `originalRequest._retry = true` before requesting a new Access Token via `/auth/refresh`. If the refresh request itself fails with 401 (invalid/expired refresh cookie), the catch block clears auth state (`clearAuth()`) and rejects the promise, redirecting to login without generating an infinite HTTP request loop.
+
+### Q3: How was production build reliability verified for Next.js 15?
+- **Architect Answer**: Executed `npm run build` in `client/`, verifying Next.js 15 Turbopack compilation. The production build output generated static HTML/JSX pages for `/`, `/_not-found`, `/chat`, `/login`, and `/register` with 0 TypeScript/JSX errors and 0 missing dependency warnings.
+
+
+
 
 
 

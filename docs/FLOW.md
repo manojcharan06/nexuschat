@@ -244,5 +244,36 @@ User A selects User B from contact search or conversation list and types a messa
 2. Recipient socket receives `message:received` event. Client checks if message `_id` or `tempId` already exists in Zustand store. If not present, appends bubble to log and updates sidebar preview text.
 3. Upon page refresh, `getMessagesApi(conversationId)` fetches history directly from MongoDB sorted by `createdAt: -1`.
 
+---
+
+## Workflow 12: Mobile Viewport Navigation & Toast Notification Flow
+
+### 1. Mobile View Navigation
+1. On mobile screens (`< 768px`), `ChatPage` checks `activeConversationId`.
+2. If `activeConversationId == null`, `Sidebar` renders at 100% viewport width (`w-full`), hiding the central chat area.
+3. When user taps a contact, `setActiveConversationId(id)` sets the active thread. `ChatPage` hides `Sidebar` and slides `main` chat area to 100% viewport width.
+4. Tapping `ArrowLeft` in `ChatHeader` executes `setActiveConversationId(null)`, returning cleanly to `Sidebar`.
+
+### 2. Toast Notification Feedback
+1. User actions (Login, Register, Profile update, Avatar upload, Socket reconnect) trigger `toast.success()`, `toast.error()`, or `toast.info()`.
+2. `ToastProvider` appends toast object to `toasts` array state.
+3. Toast renders fixed in bottom-right corner with type icon (`CheckCircle2`, `AlertCircle`, `Info`), auto-dismissing after 4000ms.
+
+---
+
+## Workflow 13: Production Build & System Security Audit Flow
+
+### 1. Production Bundle Build Process
+1. Developer runs `npm run build` inside `client/`. Next.js 15 Turbopack parses App Router pages (`/`, `/login`, `/register`, `/chat`).
+2. Static HTML/JSX pages are pre-rendered into `.next/` standalone output directory.
+3. Node server verified using ES Module `import` statements and Winston structured logging.
+
+### 2. Security Audit Execution
+1. Password Hashing: Bcrypt salt rounds (10) hash passwords before MongoDB save (`User.model.js`).
+2. API Projections: Mongoose queries explicitly exclude `password` field (`select('-password')`).
+3. Silent Refresh Interceptor: Axios interceptor traps HTTP 401, verifies `!originalRequest._retry`, calls `/auth/refresh`. If refresh fails, session is cleared without infinite HTTP request loops.
+
+
+
 
 
