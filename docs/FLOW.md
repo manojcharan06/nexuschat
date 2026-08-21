@@ -50,24 +50,26 @@ The frontend receives the Access JWT, stores it in memory (`useAuthStore`), upda
 
 ---
 
-## Workflow 3: Socket Connection Flow
+## Workflow 3: Socket Connection & Lifecycle Flow
 
 ### 1. Trigger
-The user logs in or reloads the application while an active session exists. The React `useSocket` hook detects `isAuthenticated == true` and initializes `io(SERVER_URL, { auth: { token: accessToken } })`.
+The user logs in or reloads the application while an active session exists. The React `useSocket` custom hook detects `isAuthenticated == true` and queries the Zustand `useSocketStore` singleton state.
 
 ### 2. Backend Process
-The Socket.IO server interceptor receives the handshake request, extracts the JWT from `socket.handshake.auth.token`, verifies its signature, extracts `userId`, attaches `socket.userId = userId`, and binds the socket connection to a socket room named after `userId`.
+The Socket.IO server interceptor (`socketAuthMiddleware`) intercepts the WebSocket handshake request (`ws://localhost:5000/socket.io/?EIO=4&transport=websocket`), extracts the JWT from `socket.handshake.auth.token`, verifies its signature, attaches `socket.userId = userId`, and joins the socket to room `user_<userId>`.
 
 ### 3. Database Operation
-The server updates the `users` document set `isOnline: true`.
+The server executes `User.findByIdAndUpdate(userId, { isOnline: true })` in MongoDB.
 
 ### 4. Socket Event
-1. Server emits `connection:success` back to the connecting client.
-2. Server broadcasts `user:presence_changed` payload `{ userId, isOnline: true }` to all connected clients.
+1. Server emits `connection:success` back to the connecting client socket.
+2. Server broadcasts `user:presence_changed` payload `{ userId, isOnline: true }` to all connected client sockets.
 
-### 5. Frontend Update
-1. Connecting client updates state `isSocketConnected = true`.
-2. Other active clients update the presence indicator badge next to that user's name to **Online** (Green badge).
+### 5. Frontend Update & Lifecycle Protection
+1. Connecting client receives `connection:success` and updates Zustand state `isConnected: true`.
+2. UI components render active presence indicators (pulsing green online badge).
+3. **React 18 Lifecycle Protection**: In React 18 / Next.js Strict Mode, double-effect execution is guarded using a singleton socket state check (`!socketInstance || (!socketInstance.connected && !socketInstance.connecting)`). Unmount cleanup only disconnects when `isAuthenticated == false`, preventing accidental `ws.close()` calls on in-flight connecting WebSockets.
+
 
 ---
 

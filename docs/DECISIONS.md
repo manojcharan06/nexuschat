@@ -160,6 +160,20 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Stateless server design, compatible with production CDN deployments and local dev environments.
   - **Cons**: Memory usage scales with concurrent file uploads (mitigated by strict 5MB file size caps).
 
+### Decision 27: Socket.IO Handshake Authentication & User Room Mapping
+- **Reason**: Authenticating WebSocket connections during the handshake phase via `socket.handshake.auth.token` prevents unauthorized users from opening socket connections. Auto-joining each authenticated socket to `user_<userId>` allows targeting individual user instances for real-time presence and message broadcasts.
+- **Trade-offs**:
+  - **Pros**: Strong security boundary, eliminates unauthenticated socket connections, enables targeted room event emission.
+  - **Cons**: Requires active client token refresh if access tokens expire during long idle socket connections.
+
+### Decision 28: React 18 / Next.js Strict Mode Singleton Socket Lifecycle Management
+- **Reason**: In React 18 / Next.js Strict Mode, components mount, unmount, and re-mount during initial rendering. If an effect cleanup function executes `socket.disconnect()` while a WebSocket is in `CONNECTING` state, the browser engine throws `WebSocket is closed before the connection is established.` Atomic Zustand state access (`useSocketStore.getState()`) and conditional unmount cleanup (`if (!isAuthenticated)`) prevent in-flight connection aborts while maintaining strict socket cleanup on user logout.
+- **Trade-offs**:
+  - **Pros**: Eliminates browser WebSocket connection abort warnings, prevents duplicate socket connections, maintains clean disconnection on logout.
+  - **Cons**: Requires careful Zustand store selector usage to prevent effect re-triggering.
+
+
+
 
 
 ---

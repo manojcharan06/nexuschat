@@ -44,3 +44,26 @@ This document collects architectural rationale, technical trade-off analyses, an
 ### Q3: How are profile updates synchronized across React UI components?
 - **Architect Answer**: When `PATCH /api/v1/users/profile` or `POST /api/v1/users/avatar` completes, the server returns the updated `User` document. The client `UserProfileModal` calls `setAuth(updatedUser, accessToken)` on the Zustand `useAuthStore`, triggering instant reactive re-renders across header avatars, user cards, and modal previews without requiring full page reloads.
 
+---
+
+## Phase 4: Socket.IO Real-Time Engine & Presence System
+
+### Q1: How does WebSocket handshake authentication work in Socket.IO?
+- **Architect Answer**: Socket.IO connections pass an `auth` object during the initial WebSocket handshake (`io(URL, { auth: { token } })`). A backend socket middleware interceptor (`socketAuthMiddleware`) extracts the JWT Bearer token, verifies signature and expiration via `jsonwebtoken`, and extracts the `userId`. If valid, `socket.userId` is attached to the connection; if invalid, the connection is rejected at handshake level before any events fire.
+
+### Q2: How does real-time presence detection handle sudden socket disconnections (e.g. browser crash / network drop)?
+- **Architect Answer**: Socket.IO automatically detects socket disconnects via periodic ping/pong heartbeats (`pingTimeout: 60000`, `pingInterval: 25000`). When a socket disconnects, the server `disconnect` event handler updates `User.isOnline = false` and sets `User.lastSeen = new Date()` in MongoDB, then broadcasts `user:presence_changed` to all connected clients.
+
+### Q3: How does room isolation prevent un-targeted event broadcasting?
+- **Architect Answer**: Upon connection, every socket automatically joins a private user room named `user_<userId>`. This allows the server to direct targeted events (such as direct messages or private notifications) to specific users without broadcasting to all sockets in the system.
+
+### Q4: What caused the browser error `WebSocket is closed before the connection is established` during Socket.IO connection initialization, and how was it fixed?
+- **Root Cause & Mechanism**: When `io(SOCKET_URL, ...)` is called, Socket.IO immediately creates a WebSocket object in `CONNECTING` state (`readyState === 0`). In React 18 / Next.js Strict Mode, initial component mounting triggers an immediate effect cleanup cycle. Additionally, calling `useSocketStore()` without selectors subscribed `useSocket` to all store changes (including `setSocket`), causing immediate component re-renders that re-executed the `useEffect` cleanup. The cleanup function executed `socketInstance.disconnect()` while the WebSocket was still in `CONNECTING` state. Calling `.close()` on a connecting WebSocket causes the browser engine to abort the handshake and log `WebSocket connection to ws://... failed: WebSocket is closed before the connection is established.`.
+- **Exact Fix**:
+  1. Updated `useSocket.js` to extract state using atomic selectors (`useAuthStore(state => state.accessToken)`), preventing unnecessary effect re-renders when store state updates.
+  2. Implemented singleton socket checking via `useSocketStore.getState()`. Before instantiating `io()`, the hook checks `if (!socketInstance || (!socketInstance.connected && !socketInstance.connecting))`, preventing duplicate socket instantiations.
+  3. Modified the `useEffect` cleanup function to check `if (!useAuthStore.getState().isAuthenticated)`. During React 18 double-mounts, the cleanup function no longer closes in-flight connecting WebSockets if the user remains authenticated.
+- **Socket Lifecycle & Safety**: When a user logs out (`isAuthenticated == false`), the effect detects session termination and executes `clearSocket()`, closing the socket cleanly. During navigation or component re-renders, the single active socket remains connected safely without duplicate connections or aborted handshakes.
+
+
+

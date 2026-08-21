@@ -2,11 +2,18 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore.js';
+import { useSocketStore } from '../../../store/useSocketStore.js';
+import { useSocket } from '../../../hooks/useSocket.js';
 import UserProfileModal from '../../../components/profile/UserProfileModal.jsx';
-import { MessageSquare, LogOut, Settings, ShieldCheck, Sparkles } from 'lucide-react';
+import PresenceBadge from '../../../components/common/PresenceBadge.jsx';
+import { MessageSquare, LogOut, Settings, Radio, Sparkles } from 'lucide-react';
 
 export default function ChatPage() {
+  // Initialize Socket.IO connection hook
+  useSocket();
+
   const { user, logout } = useAuthStore();
+  const { isConnected } = useSocketStore();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   return (
@@ -21,7 +28,16 @@ export default function ChatPage() {
             <h1 className="font-extrabold text-lg text-slate-100 tracking-tight leading-none">
               NexusChat
             </h1>
-            <span className="text-xs text-indigo-400 font-medium">Workspace Active</span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`}
+              ></span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                {isConnected ? 'Socket Connected' : 'Connecting Socket...'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -61,19 +77,19 @@ export default function ChatPage() {
       {/* Main Workspace Body Placeholder */}
       <main className="flex-1 p-6 flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-6">
         <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-xl shadow-indigo-950/40">
-          <ShieldCheck className="w-8 h-8" />
+          <Radio className="w-8 h-8" />
         </div>
 
         <div>
           <h2 className="text-2xl font-bold text-slate-100 mb-2">
-            Phase 3 User Profile System Verified
+            Phase 4 Socket.IO Real-Time Engine Active
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Click your user pill in the header above or click the button below to test live avatar uploads and status bio updates.
+            WebSocket handshake authentication and live presence broadcasting (`user:online`, `user:offline`, `lastSeen`) are actively connected to the server.
           </p>
         </div>
 
-        {/* Current Active Profile Card */}
+        {/* Current Active Profile Card with Live Presence */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 w-full text-left space-y-4 shadow-2xl">
           <div className="flex items-center gap-4">
             <img
@@ -84,19 +100,18 @@ export default function ChatPage() {
             <div>
               <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 @{user?.username}
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Online
-                </span>
               </h3>
-              <p className="text-xs text-indigo-400 font-medium italic mt-0.5">
+              <div className="mt-1">
+                <PresenceBadge isOnline={isConnected} lastSeen={user?.lastSeen} />
+              </div>
+              <p className="text-xs text-indigo-400 font-medium italic mt-1">
                 &quot;{user?.statusMessage}&quot;
               </p>
             </div>
           </div>
 
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span>Email: <strong className="text-slate-200">{user?.email}</strong></span>
+            <span>WebSocket Status: <strong className={isConnected ? 'text-emerald-400' : 'text-amber-400'}>{isConnected ? 'Connected (Authenticated)' : 'Disconnected'}</strong></span>
             <button
               onClick={() => setIsProfileModalOpen(true)}
               className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-semibold text-xs transition-all flex items-center gap-1.5"

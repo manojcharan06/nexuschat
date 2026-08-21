@@ -3,8 +3,12 @@ import app from './app.js';
 import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { logger } from './utils/logger.util.js';
+import { initSocket } from './sockets/index.js';
 
 const server = http.createServer(app);
+
+// Initialize Socket.IO Engine
+initSocket(server);
 
 const startServer = async () => {
   // Connect to database
