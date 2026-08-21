@@ -1,0 +1,137 @@
+# NexusChat - Architectural Decision Records (ADR)
+
+This document records key technical architectural decisions made for NexusChat, documenting rationale, trade-offs, pros, and cons.
+
+---
+
+### Decision 1: Use JWT (Access Token + Refresh Token) instead of Stateful Express Sessions
+- **Reason**: Stateless authentication allows independent scaling of HTTP and Socket servers without requiring centralized session store lookups on every single request.
+- **Trade-offs**:
+  - **Pros**: Horizontal scalability, zero database lookups for valid access tokens, clean decoupling of server nodes.
+  - **Cons**: Cannot immediately revoke access tokens before their 15-minute expiration unless a token blacklist is added to Redis.
+
+### Decision 2: Store Refresh Tokens in HttpOnly SameSite Cookies instead of LocalStorage
+- **Reason**: Protects long-lived session keys from Cross-Site Scripting (XSS) attacks by preventing client-side JavaScript access.
+- **Trade-offs**:
+  - **Pros**: High immunity against token theft via XSS vulnerabilities.
+  - **Cons**: Requires strict CORS origin and credential settings (`credentials: true`) between client and server domains.
+
+### Decision 3: Use MongoDB (Document Store) instead of PostgreSQL (Relational DB) for Chat Storage
+- **Reason**: Chat messages are semi-structured JSON objects that benefit from document embedding (read receipts, attachments) and flexible schema evolution.
+- **Trade-offs**:
+  - **Pros**: High write throughput, native JSON mapping in JavaScript, simple document nesting for attachments and read status arrays.
+  - **Cons**: Lacks relational ACID transactional multi-table joins (requires careful index optimization).
+
+### Decision 4: Use Socket.IO instead of Native WebSockets
+- **Reason**: Socket.IO provides built-in fallback mechanisms (HTTP long polling), auto-reconnection with backoff, room abstractions, and client-server acknowledgements out of the box.
+- **Trade-offs**:
+  - **Pros**: Saves hundreds of hours of custom protocol management; built-in heartbeats, reconnection, and room support.
+  - **Cons**: Slight protocol overhead compared to bare-bones WebSocket frames.
+
+### Decision 5: Client-Generated Temporary IDs (`tempId`) for Optimistic UI Updates
+- **Reason**: Enables instant UI feedback when sending messages without waiting for backend database insertion and round-trip network response.
+- **Trade-offs**:
+  - **Pros**: Instant UI reaction, zero-perceived latency for message rendering.
+  - **Cons**: Requires complex client-side mapping to swap `tempId` with real database `_id` upon server acknowledgement.
+
+### Decision 6: Debounced Typing Indicators (300ms window / 3000ms timeout)
+- **Reason**: Emitting socket events on every single keypress floods network bandwidth and degrades server performance under heavy typing.
+- **Trade-offs**:
+  - **Pros**: Reduces typing socket event traffic by up to 90%.
+  - **Cons**: Microscopic delay (~300ms) before typing state changes are emitted to peers.
+
+### Decision 7: Cursor-Based Pagination (`before=<messageId>`) over Offset-Based Pagination (`skip=30`)
+- **Reason**: Offset pagination (`SKIP N LIMIT M`) degrades performance in large message collections and causes duplicate/missing items when new messages arrive while scrolling history.
+- **Trade-offs**:
+  - **Pros**: Constant-time query performance ($O(1)$ index scan), robust against dynamic data insertions.
+  - **Cons**: Cannot jump directly to arbitrary page numbers (e.g., "Page 4"), only sequential scroll navigation.
+
+### Decision 8: Controller-Service-Repository Backend Code Pattern
+- **Reason**: Strict separation of concerns keeps route controllers thin, isolates business logic inside services, and encapsulates database access within Mongoose model repositories.
+- **Trade-offs**:
+  - **Pros**: High testability, clean code organization, seamless refactoring path.
+  - **Cons**: Requires boilerplate file structures for smaller helper functions.
+
+### Decision 9: Zustand for Client React State Management over Redux Toolkit
+- **Reason**: Zustand has a tiny bundle footprint (~1.1kB), minimal boilerplate, supports un-opinionated store slices, and eliminates unnecessary re-renders.
+- **Trade-offs**:
+  - **Pros**: Ultra-fast developer setup, lightweight bundle size, easy store subscription outside React components.
+  - **Cons**: Less formal middleware ecosystem compared to Redux DevTools suite.
+
+### Decision 10: Cloudinary CDN for Image & Media Storage instead of Local Disk Storage
+- **Reason**: Storing media files on server disk breaks stateless server principles and fails when scaling to multiple instances or serverless deployments.
+- **Trade-offs**:
+  - **Pros**: Offloads bandwidth, automatic image optimization/compression, global CDN distribution.
+  - **Cons**: Reliance on third-party SaaS API limits and API key configuration.
+
+### Decision 11: Soft Deletion (`isDeleted: true`) for Chat Messages
+- **Reason**: Preserves message thread integrity, audit history, and sequence continuity without breaking references in conversation metadata.
+- **Trade-offs**:
+  - **Pros**: Easy message recovery if needed, maintains thread continuity ("This message was deleted").
+  - **Cons**: Database disk storage is retained for deleted items until a hard purge task runs.
+
+### Decision 12: Socket Authentication at Connection Handshake Level
+- **Reason**: Rejecting unauthenticated socket connections during the handshake phase prevents unauthorized users from occupying server socket connections.
+- **Trade-offs**:
+  - **Pros**: High security, prevents unauthorized socket connection spamming.
+  - **Cons**: Requires re-authenticating the socket if the Access JWT expires during long idle sessions.
+
+### Decision 13: Dedicated `conversations` Collection separate from `messages` Collection
+- **Reason**: Querying conversations requires summary metadata (last message, participant list, unread count) without fetching thousands of message rows.
+- **Trade-offs**:
+  - **Pros**: Fast conversation sidebar list rendering ($O(1)$ scan per conversation).
+  - **Cons**: Requires dual-writes (updating `Message` collection and updating `Conversation.lastMessage` reference).
+
+### Decision 14: Use `bcrypt` with Salt Factor 10 for Password Hashing
+- **Reason**: Industry standard adaptive cryptographic hashing algorithm that balances computation cost with brute-force protection.
+- **Trade-offs**:
+  - **Pros**: Proven resistance against rainbow table and ASIC hardware attacks.
+  - **Cons**: Password verification takes ~60-100ms of CPU time per login request.
+
+### Decision 15: Standardized API Error Response Payload Structure
+- **Reason**: Uniform error format (`{ success: false, error: { code, message, details } }`) simplifies client-side HTTP error handling across all views.
+- **Trade-offs**:
+  - **Pros**: Consistent error parsing in Axios interceptors and global UI toasts.
+  - **Cons**: Requires custom `ApiError` class wrapper around standard Express error handlers.
+
+### Decision 16: Express-Validator for DTO Payload Validation Middleware
+- **Reason**: Decouples input validation logic from controller handlers, ensuring sanitized data hits business services.
+- **Trade-offs**:
+  - **Pros**: Prevents invalid data types, XSS strings, or missing required fields from reaching database logic.
+  - **Cons**: Requires writing explicit validation chains for every HTTP route.
+
+### Decision 17: Vite for Frontend React Tooling over Create React App (CRA)
+- **Reason**: Vite utilizes native ES modules during development for instant server boot times and extremely fast HMR (Hot Module Replacement).
+- **Trade-offs**:
+  - **Pros**: Rapid dev build speed, optimized Rollup production output.
+  - **Cons**: Standard environment variables require `VITE_` prefix instead of `REACT_APP_`.
+
+### Decision 18: Unread Message Tracking using Per-User Read Status Arrays
+- **Reason**: Direct arrays (`readBy: [userId]`) inside message documents allow straightforward atomic queries for unread calculations.
+- **Trade-offs**:
+  - **Pros**: Accurate real-time status updates per message bubble.
+  - **Cons**: Document size grows slightly with high participant counts in group chats.
+
+### Decision 19: Winston & Morgan for Structured JSON Server Logging
+- **Reason**: Plain `console.log` statements are non-standard, lack severity timestamps, and cannot be parsed by log aggregator tools.
+- **Trade-offs**:
+  - **Pros**: Structured JSON log outputs with error stack traces, log levels (info, warn, error), and file rotation.
+  - **Cons**: Requires initial log configuration setup.
+
+### Decision 20: React Query (TanStack Query) for Async REST State Management
+- **Reason**: Eliminates repetitive `useEffect` data fetching code, provides automatic background revalidation, response caching, and query deduplication.
+- **Trade-offs**:
+  - **Pros**: Clean code abstractions, built-in caching, pagination support.
+  - **Cons**: Learning curve around query key management and cache invalidation invalidations.
+
+### Decision 21: Compound Indexing (`{ conversationId: 1, createdAt: -1 }`) on Messages
+- **Reason**: Most database queries request the most recent messages belonging to a single conversation. A compound index serves this directly.
+- **Trade-offs**:
+  - **Pros**: Dramatically faster query execution times (<5ms scan).
+  - **Cons**: Slight index memory footprint on disk and write overhead on message insertion.
+
+### Decision 22: Custom Socket Room Architecture (`user_<userId>` and `conv_<conversationId>`)
+- **Reason**: Organizes socket broadcast channels into logical user rooms and conversation rooms to target event emissions efficiently.
+- **Trade-offs**:
+  - **Pros**: Precise event targeting without broadcasting to all connected sockets.
+  - **Cons**: Requires strict room join/leave lifecycle management on client navigation.
