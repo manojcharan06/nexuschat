@@ -30,3 +30,17 @@ This document collects architectural rationale, technical trade-off analyses, an
 
 ### Q4: How does password security work in the User model?
 - **Architect Answer**: Passwords are hashed using `bcryptjs` with a salt factor of 10 (`saltRounds = 10`). The `passwordHash` field is marked with `select: false` in Mongoose, ensuring it is never returned in standard database queries or leaked in API responses unless explicitly requested for verification inside `loginUser`.
+
+---
+
+## Phase 3: User Profile & Avatar Upload System
+
+### Q1: How does Multer handle image file buffer validation without saving files to server disk?
+- **Architect Answer**: Multer is configured with `multer.memoryStorage()`, which buffers incoming multipart file streams directly into Node.js `Buffer` objects in memory (`file.buffer`). A custom `fileFilter` validates file MIME types (`image/jpeg`, `image/png`, `image/webp`) and enforces a 5MB limit (`limits: { fileSize: 5 * 1024 * 1024 }`), returning an operational `INVALID_FILE_TYPE` or `FILE_TOO_LARGE` `ApiError` before any buffer reaches storage handlers.
+
+### Q2: How does the media service handle Cloudinary CDN integration with zero dev setup friction?
+- **Architect Answer**: `server/src/services/upload.service.js` checks for `CLOUDINARY_CLOUD_NAME` and `CLOUDINARY_API_KEY` environment variables. If present, it streams the in-memory buffer via `cloudinary.uploader.upload_stream`. If credentials are not set during local offline development, it generates a Base64 Data URI (`data:image/png;base64,...`), allowing instant avatar previews and UI profile updates without breaking local dev setups.
+
+### Q3: How are profile updates synchronized across React UI components?
+- **Architect Answer**: When `PATCH /api/v1/users/profile` or `POST /api/v1/users/avatar` completes, the server returns the updated `User` document. The client `UserProfileModal` calls `setAuth(updatedUser, accessToken)` on the Zustand `useAuthStore`, triggering instant reactive re-renders across header avatars, user cards, and modal previews without requiring full page reloads.
+

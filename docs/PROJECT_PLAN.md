@@ -89,7 +89,7 @@ NexusChat solves these challenges through clean separation of concerns, stateles
 |---|---|---|---|
 | **Phase 1** | Next.js 15 & Express Base Setup | ✅ **COMPLETED** | Next.js 15 App Router (`client/`), Express server (`server/`), MongoDB Mongoose connection (`db.js`), env configuration (`.env`), base folder trees. |
 | **Phase 2** | Authentication (JWT, Auth Guard) | ✅ **COMPLETED** | Signup, Login, Password Hashing (`bcrypt`), JWT Access Token & HttpOnly Refresh Cookie, Protected `/chat` route guard. |
-| **Phase 3** | User Profile & Avatar Upload | ⏳ *PENDING* | Profile updates, Cloudinary avatar upload, bio status. |
+| **Phase 3** | User Profile & Avatar Upload | ✅ **COMPLETED** | Profile updates (`PATCH /users/profile`), Avatar upload (`POST /upload/image`), `UserProfileModal`, status message updates. |
 | **Phase 4** | Socket.IO Connection & Presence | ⏳ *PENDING* | Handshake auth, `user:online`, `lastSeen` tracking. |
 | **Phase 5** | One-to-One Real-Time Messaging | ⏳ *PENDING* | Direct chat threads, message insertion, socket delivery. |
 | **Phase 6** | Typing Indicator & Read Status | ⏳ *PENDING* | Debounced typing, `delivered` and `seen` checkmarks. |

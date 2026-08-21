@@ -154,6 +154,13 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Seamless user experience without forcing user re-logins every 15 minutes.
   - **Cons**: Requires retry guard logic (`originalRequest._retry`) to prevent infinite loop loops if the refresh cookie is invalid.
 
+### Decision 26: Multer MemoryStorage & Hybrid Cloudinary CDN Fallback
+- **Reason**: Processing image buffers in-memory using Multer `memoryStorage()` allows streaming image streams to Cloudinary CDN without relying on persistent local disk storage. If Cloudinary API keys are omitted during development, a base64 Data URI fallback ensures image previews function out-of-the-box locally.
+- **Trade-offs**:
+  - **Pros**: Stateless server design, compatible with production CDN deployments and local dev environments.
+  - **Cons**: Memory usage scales with concurrent file uploads (mitigated by strict 5MB file size caps).
+
+
 
 ---
 

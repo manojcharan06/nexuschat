@@ -194,3 +194,25 @@ No socket event involved in HTTP health ping.
 ### 5. Frontend Update
 Client checks health response `{ success: true, data: { status: "UP" } }` and displays active infrastructure status badge.
 
+---
+
+## Workflow 10: User Profile Update & Avatar Upload Flow
+
+### 1. Trigger
+User opens `UserProfileModal` inside workspace, inputs a new bio status message (e.g. *"In a meeting"*), picks a new avatar image file (PNG/JPG/WEBP < 5MB), and clicks **"Save Changes"**.
+
+### 2. Backend Process
+1. For avatar image: Client sends `POST /api/v1/users/avatar` with `multipart/form-data`. `uploadSingleImage` Multer middleware validates file MIME type and byte size. `uploadImageToStorage` streams buffer to Cloudinary CDN (or generates local fallback URL).
+2. For status bio: Client sends `PATCH /api/v1/users/profile` with `{ statusMessage }`. `updateProfile` controller validates string length (max 100 chars).
+
+### 3. Database Operation
+Backend executes `User.findByIdAndUpdate(_id, { avatarUrl, statusMessage }, { new: true })` in MongoDB.
+
+### 4. Socket Event
+No socket event involved in HTTP profile editing (Presence updates handle online status broadcast separately in Phase 4).
+
+### 5. Frontend Update
+1. Upon receiving updated user document from server, `useAuthStore` updates `user` state.
+2. Top header navigation pill, active profile avatar, and status bio render new values instantly.
+
+

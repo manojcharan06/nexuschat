@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuthStore } from '../../../store/useAuthStore.js';
-import { MessageSquare, LogOut, User, ShieldCheck } from 'lucide-react';
+import UserProfileModal from '../../../components/profile/UserProfileModal.jsx';
+import { MessageSquare, LogOut, Settings, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function ChatPage() {
   const { user, logout } = useAuthStore();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -22,20 +25,27 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3 bg-slate-800/60 border border-slate-700/50 rounded-full px-3 py-1.5">
-            {user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.username}
-                className="w-7 h-7 rounded-full object-cover border border-indigo-500/50"
-              />
-            ) : (
-              <User className="w-4 h-4 text-slate-400" />
-            )}
-            <span className="text-sm font-semibold text-slate-200">{user?.username}</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          </div>
+        <div className="flex items-center gap-3">
+          {/* User Profile Card Button */}
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="flex items-center gap-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 rounded-full px-3 py-1.5 transition-all text-left group"
+          >
+            <img
+              src={user?.avatarUrl}
+              alt={user?.username}
+              className="w-7 h-7 rounded-full object-cover border border-indigo-500/50 group-hover:border-indigo-400 transition-all"
+            />
+            <div className="hidden sm:flex flex-col">
+              <span className="text-xs font-semibold text-slate-200 group-hover:text-white leading-tight">
+                {user?.username}
+              </span>
+              <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                {user?.statusMessage || 'Available'}
+              </span>
+            </div>
+            <Settings className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 transition-colors ml-1" />
+          </button>
 
           <button
             onClick={logout}
@@ -49,26 +59,60 @@ export default function ChatPage() {
       </header>
 
       {/* Main Workspace Body Placeholder */}
-      <main className="flex-1 p-6 flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6 shadow-xl shadow-indigo-950/40">
+      <main className="flex-1 p-6 flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-6">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-xl shadow-indigo-950/40">
           <ShieldCheck className="w-8 h-8" />
         </div>
 
-        <h2 className="text-2xl font-bold text-slate-100 mb-2">
-          Authentication Engine Verified
-        </h2>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-100 mb-2">
+            Phase 3 User Profile System Verified
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Click your user pill in the header above or click the button below to test live avatar uploads and status bio updates.
+          </p>
+        </div>
 
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">
-          You are securely logged in as <span className="text-indigo-400 font-semibold">{user?.email}</span>. Your session is protected by short-lived JWT Access Tokens in memory and long-lived HttpOnly Refresh Cookies.
-        </p>
+        {/* Current Active Profile Card */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 w-full text-left space-y-4 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <img
+              src={user?.avatarUrl}
+              alt={user?.username}
+              className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500/50 shadow-md"
+            />
+            <div>
+              <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                @{user?.username}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Online
+                </span>
+              </h3>
+              <p className="text-xs text-indigo-400 font-medium italic mt-0.5">
+                &quot;{user?.statusMessage}&quot;
+              </p>
+            </div>
+          </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 w-full text-left font-mono text-xs text-slate-400 space-y-1">
-          <div><span className="text-indigo-400">User ID:</span> {user?._id || user?.id}</div>
-          <div><span className="text-indigo-400">Username:</span> {user?.username}</div>
-          <div><span className="text-indigo-400">Status Message:</span> {user?.statusMessage}</div>
-          <div><span className="text-indigo-400">Online Status:</span> True</div>
+          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span>Email: <strong className="text-slate-200">{user?.email}</strong></span>
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-semibold text-xs transition-all flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Edit Profile
+            </button>
+          </div>
         </div>
       </main>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }
