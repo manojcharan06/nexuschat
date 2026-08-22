@@ -14,7 +14,16 @@ export const useChatStore = create((set, get) => ({
 
   setConversations: (conversations) => set({ conversations }),
 
-  setActiveConversationId: (id) => set({ activeConversationId: id }),
+  setActiveConversationId: (id) => {
+    if (typeof window !== 'undefined') {
+      if (id) {
+        localStorage.setItem('nexuschat_active_conv', id);
+      } else {
+        localStorage.removeItem('nexuschat_active_conv');
+      }
+    }
+    set({ activeConversationId: id });
+  },
 
   upsertConversation: (newConv) =>
     set((state) => {
@@ -117,11 +126,17 @@ export const useChatStore = create((set, get) => ({
           const replaced = currentList.map((m) =>
             m.tempId === message.tempId || m._id === message.tempId ? message : m
           );
+          const convs = state.conversations.map((c) =>
+            c._id === conversationId ? { ...c, lastMessage: message, updatedAt: new Date().toISOString() } : c
+          );
+          convs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
           return {
             messages: {
               ...state.messages,
               [conversationId]: replaced,
             },
+            conversations: convs,
           };
         }
       }

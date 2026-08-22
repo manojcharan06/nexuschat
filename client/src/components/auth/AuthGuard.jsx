@@ -22,7 +22,7 @@ export default function AuthGuard({ children }) {
 
       if (!isAuthenticated && !isPublic) {
         router.push('/login');
-      } else if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
+      } else if (isAuthenticated && (pathname === '/login' || pathname === '/register' || pathname === '/')) {
         router.push('/chat');
       }
     }

@@ -36,7 +36,16 @@ export default function ChatPage() {
       setIsLoadingConversations(true);
       try {
         const res = await getConversationsApi();
-        setConversations(res.data || []);
+        const convList = res.data || [];
+        setConversations(convList);
+
+        // Restore active conversation from localStorage if valid
+        if (typeof window !== 'undefined') {
+          const savedActiveId = localStorage.getItem('nexuschat_active_conv');
+          if (savedActiveId && convList.some((c) => c._id === savedActiveId)) {
+            setActiveConversationId(savedActiveId);
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch conversations:', err);
       } finally {
@@ -45,7 +54,7 @@ export default function ChatPage() {
     };
 
     fetchConversations();
-  }, [isAuthenticated, setConversations, setIsLoadingConversations]);
+  }, [isAuthenticated, setConversations, setIsLoadingConversations, setActiveConversationId]);
 
   const activeConversation = conversations.find((c) => c._id === activeConversationId);
 

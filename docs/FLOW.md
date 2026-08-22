@@ -241,8 +241,8 @@ User A selects User B from contact search or conversation list and types a messa
 
 ### 5. Frontend Real-Time Sync & Duplicate Prevention
 1. Sender socket receives acknowledgement callback, matches `tempId`, and replaces optimistic bubble with confirmed `_id` and status `sent`.
-2. Recipient socket receives `message:received` event. Client checks if message `_id` or `tempId` already exists in Zustand store. If not present, appends bubble to log and updates sidebar preview text.
-3. Upon page refresh, `getMessagesApi(conversationId)` fetches history directly from MongoDB sorted by `createdAt: -1`.
+2. Recipient socket receives `message:received` event. Client checks if message `_id` or `tempId` already exists in Zustand store. If not present, appends bubble to log and updates sidebar preview text. If the target conversation is not yet in client store, client calls `getConversationsApi()` to immediately hydrate sidebar state without requiring a page refresh.
+3. Upon page refresh or browser reopen, `getMessagesApi(conversationId)` fetches history directly from MongoDB sorted by `createdAt: -1`, and the active conversation ID is restored from `localStorage`.
 
 ---
 

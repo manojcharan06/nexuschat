@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { useAuthStore } from '../store/useAuthStore.js';
 import { useSocketStore } from '../store/useSocketStore.js';
 import { useChatStore } from '../store/useChatStore.js';
+import { getConversationsApi } from '../api/chat.api.js';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
@@ -51,9 +52,22 @@ export function useSocket() {
       });
 
       // Handle real-time incoming messages
-      socketInstance.on('message:received', (message) => {
+      socketInstance.on('message:received', async (message) => {
         if (message && message.conversationId) {
-          useChatStore.getState().appendIncomingMessage(message.conversationId, message);
+          const store = useChatStore.getState();
+          store.appendIncomingMessage(message.conversationId, message);
+
+          const convExists = store.conversations.some((c) => c._id === message.conversationId);
+          if (!convExists) {
+            try {
+              const res = await getConversationsApi();
+              if (res.data) {
+                useChatStore.getState().setConversations(res.data);
+              }
+            } catch (err) {
+              console.error('Failed to sync conversations on message:received:', err);
+            }
+          }
         }
       });
 

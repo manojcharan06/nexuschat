@@ -120,6 +120,17 @@ This document collects architectural rationale, technical trade-off analyses, an
 ### Q3: How do health check endpoints improve production availability?
 - **Architect Answer**: PaaS hosting providers and cloud load balancers periodically probe application health check endpoints (`GET /health` and `GET /api/v1/health`). If a container instance hangs or fails, the load balancer receives a non-200 status code or timeout and automatically restarts the instance or redirects traffic to healthy worker instances, ensuring high availability.
 
+---
+
+## Phase 9: Critical Production Bug Fixes & Session State Maintenance
+
+### Q1: How does NexusChat ensure the first created conversation appears immediately in the sidebar without page refresh?
+- **Architect Answer**: When a user creates a new conversation or receives a message for a thread not currently loaded in the Zustand `useChatStore`, the client's `message:received` socket handler detects the missing conversation ID and immediately invokes `getConversationsApi()`. The newly created thread with its metadata (`participants`, `lastMessage`, `updatedAt`) is merged into the store, allowing both sender and recipient sidebars to update in real time without manual reload.
+
+### Q2: How does session restore after closing the browser preserve active chat state securely?
+- **Architect Answer**: Authentication state is automatically restored on application mount via `AuthGuard` using the HttpOnly `refreshToken` cookie to fetch a fresh JWT Access Token via `POST /auth/refresh`. To restore active chat state without storing sensitive credentials in `localStorage`, the non-sensitive `activeConversationId` string is persisted in `localStorage` under `nexuschat_active_conv`. When `ChatPage` hydrates conversations from the server, it matches `activeConversationId`, restoring the active thread view and socket room subscription seamlessly.
+
+
 
 
 

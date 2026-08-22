@@ -196,11 +196,12 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Zero committed secrets, 100% clean production bundle build, hardened API endpoints, complete QA documentation (`docs/TESTING.md` & `README.md`).
   - **Cons**: Requires manual environment variable setup per target host.
 
-### Decision 33: Production Cookie, Host Binding & Multi-Cloud Deployment Architecture
-- **Reason**: For decoupled multi-cloud deployments (Vercel frontend + Render/Railway backend over HTTPS), cross-site HttpOnly cookies require `sameSite: 'none'` and `secure: true` in production while defaulting to `lax` and `secure: false` in local development. Binding Express to `0.0.0.0:${PORT}` guarantees compatibility with container PaaS hosts, and root `/health` endpoints allow PaaS load balancers to perform automated liveness checks.
+### Decision 34: Non-Sensitive Active Conversation ID Persistence in LocalStorage
+- **Reason**: Storing `activeConversationId` in `localStorage` (`nexuschat_active_conv`) allows the client to restore the user's previously active chat thread after closing and reopening the browser or refreshing the page without exposing sensitive authentication tokens.
 - **Trade-offs**:
-  - **Pros**: Zero cross-origin authentication failures over HTTPS, native cloud container compatibility, automated PaaS liveness checks.
-  - **Cons**: Requires SSL/TLS certificates on production domains for `SameSite=None` cookies.
+  - **Pros**: Seamless user experience, restores chat view state across browser restarts, zero security risk since tokens remain in memory/HttpOnly cookies.
+  - **Cons**: Requires clearing the stored key upon explicit logout (`logout()`) or token invalidation (`clearAuth()`).
+
 
 
 

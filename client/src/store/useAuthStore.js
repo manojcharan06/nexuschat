@@ -17,14 +17,18 @@ export const useAuthStore = create((set, get) => ({
       error: null,
     }),
 
-  clearAuth: () =>
+  clearAuth: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('nexuschat_active_conv');
+    }
     set({
       user: null,
       accessToken: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
-    }),
+    });
+  },
 
   setError: (error) => set({ error }),
 
@@ -46,6 +50,9 @@ export const useAuthStore = create((set, get) => ({
     } catch (err) {
       // Ignore logout errors
     } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('nexuschat_active_conv');
+      }
       get().clearAuth();
     }
   },
