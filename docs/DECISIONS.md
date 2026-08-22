@@ -202,6 +202,13 @@ This document records key technical architectural decisions made for NexusChat, 
   - **Pros**: Seamless user experience, restores chat view state across browser restarts, zero security risk since tokens remain in memory/HttpOnly cookies.
   - **Cons**: Requires clearing the stored key upon explicit logout (`logout()`) or token invalidation (`clearAuth()`).
 
+### Decision 35: Client-Acknowledged Delivery Status Tracking (`message:delivered:ack`)
+- **Reason**: Messages are marked as `'delivered'` (`✓✓`) strictly when the recipient client receives the message over Socket.IO (or hydrates pending messages on reconnect) and returns `message:delivered:ack`. This guarantees that messages sent to offline users remain marked as `'sent'` (`✓`) until the recipient actually connects and receives the payload.
+- **Trade-offs**:
+  - **Pros**: Accurate, real-time WhatsApp-style delivery tracking, immune to false positive delivery claims, secure server-side recipient verification.
+  - **Cons**: Requires dual-phase socket messaging (push message -> client acknowledgment -> sender notification).
+
+
 
 
 

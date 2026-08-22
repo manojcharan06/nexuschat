@@ -161,4 +161,31 @@ export const useChatStore = create((set, get) => ({
         conversations: convs,
       };
     }),
+
+  markMessageDelivered: (conversationId, messageId) =>
+    set((state) => {
+      const currentList = state.messages[conversationId] || [];
+      const updatedList = currentList.map((m) =>
+        m._id === messageId || m.tempId === messageId ? { ...m, status: 'delivered' } : m
+      );
+
+      const convs = state.conversations.map((c) => {
+        if (
+          c._id === conversationId &&
+          c.lastMessage &&
+          (c.lastMessage._id === messageId || c.lastMessage.tempId === messageId)
+        ) {
+          return { ...c, lastMessage: { ...c.lastMessage, status: 'delivered' } };
+        }
+        return c;
+      });
+
+      return {
+        messages: {
+          ...state.messages,
+          [conversationId]: updatedList,
+        },
+        conversations: convs,
+      };
+    }),
 }));

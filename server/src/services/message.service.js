@@ -79,3 +79,25 @@ export const createMessage = async ({ conversationId, senderId, text, attachment
 
   return await Message.findById(message._id).populate('senderId', 'username avatarUrl');
 };
+
+export const markMessageAsDelivered = async (recipientId, conversationId, messageId) => {
+  const message = await Message.findById(messageId);
+  if (!message) return null;
+
+  if (message.conversationId.toString() !== conversationId.toString()) {
+    return null;
+  }
+
+  // Safety: Recipient must NOT be the sender
+  if (message.senderId.toString() === recipientId.toString()) {
+    return null;
+  }
+
+  // Update status to 'delivered' if currently 'sent'
+  if (message.status === 'sent') {
+    message.status = 'delivered';
+    await message.save();
+  }
+
+  return message;
+};

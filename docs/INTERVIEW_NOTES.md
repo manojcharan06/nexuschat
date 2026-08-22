@@ -130,6 +130,17 @@ This document collects architectural rationale, technical trade-off analyses, an
 ### Q2: How does session restore after closing the browser preserve active chat state securely?
 - **Architect Answer**: Authentication state is automatically restored on application mount via `AuthGuard` using the HttpOnly `refreshToken` cookie to fetch a fresh JWT Access Token via `POST /auth/refresh`. To restore active chat state without storing sensitive credentials in `localStorage`, the non-sensitive `activeConversationId` string is persisted in `localStorage` under `nexuschat_active_conv`. When `ChatPage` hydrates conversations from the server, it matches `activeConversationId`, restoring the active thread view and socket room subscription seamlessly.
 
+---
+
+## Phase 10: WhatsApp-Style Message Delivery Status System
+
+### Q1: How does the delivery acknowledgment flow prevent false-positive delivery status updates?
+- **Architect Answer**: Rather than assuming a message is delivered merely because it was persisted to MongoDB, NexusChat relies on recipient-side socket acknowledgments (`message:delivered:ack`). When the recipient client actually receives `message:received` via Socket.IO, it emits `message:delivered:ack`. The server validates that the socket user is an authorized participant and not the sender, updates MongoDB `status: 'delivered'`, and notifies the sender via `message:delivered`. This guarantees messages sent to offline users remain as single check (`✓`) until the recipient actually connects and receives the payload.
+
+### Q2: How are optimistic tempId messages reconciled with delivery status updates without creating duplicate messages?
+- **Architect Answer**: The client Zustand store `confirmOptimisticMessage` matches the optimistic `tempId` and replaces it with the confirmed database `_id`. The delivery status handler `markMessageDelivered` checks both `_id` and `tempId` against existing messages in the array. When `message:delivered` arrives, the store updates the message's `status` property to `'delivered'` in-place, transitioning the UI check icon from `✓` to `✓✓` without altering array key identities or re-rendering duplicate message bubbles.
+
+
 
 
 

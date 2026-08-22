@@ -92,4 +92,39 @@ export const registerChatHandlers = (io, socket) => {
       }
     }
   });
+
+  // 3. Message Delivered Acknowledgement Event
+  socket.on('message:delivered:ack', async (data, callback) => {
+    try {
+      const { messageId, conversationId } = data || {};
+      if (!messageId || !conversationId) {
+        if (typeof callback === 'function') callback({ status: 'error', message: 'Missing parameters' });
+        return;
+      }
+
+      const updatedMessage = await messageService.markMessageAsDelivered(
+        userId,
+        conversationId,
+        messageId
+      );
+
+      if (updatedMessage) {
+        const senderIdStr = updatedMessage.senderId.toString();
+        const payload = {
+          messageId: updatedMessage._id.toString(),
+          conversationId: updatedMessage.conversationId.toString(),
+          status: 'delivered',
+        };
+
+        // Notify original sender via socket
+        io.to(`user_${senderIdStr}`).emit('message:delivered', payload);
+        io.to(`conv_${conversationId}`).emit('message:delivered', payload);
+      }
+
+      if (typeof callback === 'function') callback({ status: 'ok' });
+    } catch (error) {
+      logger.error(`Error processing message:delivered:ack: ${error.message}`);
+      if (typeof callback === 'function') callback({ status: 'error', message: error.message });
+    }
+  });
 };

@@ -289,6 +289,38 @@ User A selects User B from contact search or conversation list and types a messa
 3. Server returns Access Token in body and `refreshToken` cookie set to `SameSite=None; Secure; HttpOnly`.
 4. Client Socket.IO establishes secure WebSocket connection over WSS (`wss://nexuschat.onrender.com/socket.io/?EIO=4&transport=websocket`).
 
+---
+
+## Workflow 15: WhatsApp-Style Message Delivery Status Lifecycle
+
+### 1. Trigger & Optimistic Sent State (Single Check `✓`)
+1. Sender User A submits a text message in `ChatInputComposer`.
+2. Sender client generates `tempId` and renders optimistic message bubble with status `sending` / `sent`.
+3. Client emits `message:send` socket event. Server validates payload, inserts document into MongoDB `messages` with `status: 'sent'`, and returns acknowledgement callback.
+4. Sender UI updates message status indicator to single check **Sent** (`✓`).
+
+### 2. Socket Delivery & Recipient Acknowledgement
+1. Server broadcasts `message:received` payload to recipient room `user_<recipientId>`.
+2. Recipient User B's client receives `message:received`. Client verifies recipient identity (`currentUserId !== senderId`) and immediately emits socket event `message:delivered:ack` with payload `{ messageId, conversationId }`.
+
+### 3. Server Verification & Database Mutation
+1. Server receives `message:delivered:ack` and extracts authenticated `socket.userId`.
+2. Server validates message existence, checks `conversationId` membership, and verifies `socket.userId` is a recipient (not sender).
+3. Server idempotently mutates MongoDB document status: `UPDATE messages SET status = 'delivered' WHERE _id = messageId AND status = 'sent'`.
+4. Server emits `message:delivered` payload `{ messageId, conversationId, status: 'delivered' }` to sender room `user_<senderId>`.
+
+### 4. Sender UI Update (Double Check `✓✓`)
+1. Sender client receives `message:delivered` socket event.
+2. `useChatStore.markMessageDelivered` action updates message status to `'delivered'` in Zustand store.
+3. Sender message bubble icon transitions dynamically from single check (`✓`) to double check (`✓✓`).
+
+### 5. Offline User & Reconnect Hydration
+1. If recipient User B is offline when message is sent, message remains in MongoDB with `status: 'sent'`. Sender sees `✓`.
+2. When recipient User B reconnects or views the conversation log, `MessageList` inspects unacknowledged incoming messages (`senderId != currentUserId` AND `status == 'sent'`).
+3. Recipient client automatically emits `message:delivered:ack` for pending messages.
+4. Server updates MongoDB to `status: 'delivered'` and emits `message:delivered` to sender, transitioning sender's bubble to `✓✓`.
+
+
 
 
 

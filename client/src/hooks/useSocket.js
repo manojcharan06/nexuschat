@@ -57,6 +57,18 @@ export function useSocket() {
           const store = useChatStore.getState();
           store.appendIncomingMessage(message.conversationId, message);
 
+          const currentUser = useAuthStore.getState().user;
+          const currentUserId = (currentUser?._id || currentUser?.id)?.toString();
+          const senderId = (message.senderId?._id || message.senderId)?.toString();
+
+          // Send delivery acknowledgement if current user is recipient
+          if (currentUserId && senderId && currentUserId !== senderId && message._id) {
+            socketInstance.emit('message:delivered:ack', {
+              messageId: message._id,
+              conversationId: message.conversationId,
+            });
+          }
+
           const convExists = store.conversations.some((c) => c._id === message.conversationId);
           if (!convExists) {
             try {
@@ -68,6 +80,13 @@ export function useSocket() {
               console.error('Failed to sync conversations on message:received:', err);
             }
           }
+        }
+      });
+
+      // Handle real-time delivery status updates
+      socketInstance.on('message:delivered', (data) => {
+        if (data && data.conversationId && data.messageId) {
+          useChatStore.getState().markMessageDelivered(data.conversationId, data.messageId);
         }
       });
 

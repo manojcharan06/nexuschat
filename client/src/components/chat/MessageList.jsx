@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/useAuthStore.js';
 import { useChatStore } from '../../store/useChatStore.js';
+import { useSocketStore } from '../../store/useSocketStore.js';
 import { getMessagesApi } from '../../api/chat.api.js';
 import MessageBubble from './MessageBubble.jsx';
 import { Loader2, MessageSquare } from 'lucide-react';
@@ -41,6 +42,26 @@ export default function MessageList({ conversationId }) {
       fetchInitialMessages();
     }
   }, [conversationId, setMessages, setIsLoadingMessages, messages]);
+
+  // Emit delivery acknowledgements for unacknowledged incoming messages when viewing thread
+  useEffect(() => {
+    if (!conversationMessages || conversationMessages.length === 0 || !conversationId) return;
+
+    const socket = useSocketStore.getState().socket;
+    if (!socket || !socket.connected) return;
+
+    conversationMessages.forEach((msg) => {
+      const senderIdStr = (msg.senderId?._id || msg.senderId)?.toString();
+      const isIncoming = senderIdStr && currentUserId && senderIdStr !== currentUserId.toString();
+
+      if (isIncoming && msg.status === 'sent' && msg._id) {
+        socket.emit('message:delivered:ack', {
+          messageId: msg._id,
+          conversationId,
+        });
+      }
+    });
+  }, [conversationId, conversationMessages, currentUserId]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
